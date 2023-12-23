@@ -1,0 +1,203 @@
+﻿
+<div class="card" data-bind="visible: situation() == 'index'">
+
+    <div class="card-header btn-group">
+        <button data-bind="click: addNew" class="btn btn-info">Add</button>
+
+        <button data-bind="click: extractList" class="btn btn-info">Refresh</button>
+    </div>
+
+
+    <table class="card-body table table-responsive">
+        <thead>
+            <tr>
+                <th>
+                    ID
+                </th>
+                <th>
+                    Name
+                </th>
+                <th>
+                    Blood Group
+                </th>
+                <th>
+                    Operation
+                </th>
+            </tr>
+        </thead>
+        <tbody data-bind="foreach: donorFile">
+            <tr>
+                <td data-bind="text: DonorId"></td>
+                <td data-bind="text: FullName"></td>
+                <td data-bind="text: BloodGroup"></td>
+                <td class="btn-group">
+                    <button data-bind="click: extractDonor " class="btn btn-warning">Modify</button>
+                    <button data-bind="click: vanishDonor " class="btn btn-danger">Vanish</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+
+
+
+</div>
+
+
+<div data-bind="visible: situation() == 'form'" class="card">
+
+
+    <div class="card-body">
+        <input type="hidden" data-bind="value: donoR.DonorId " />
+
+        <div class="row">
+            <label class="text-black col-md-5">First Name : </label>
+            <input class="form-control col-md-7" data-bind="value: donoR.FirstName " />
+        </div>
+        <div class="row">
+            <label class="text-black col-md-5">Last Name : </label>
+            <input class="form-control col-md-7" data-bind="value: donoR.LastName " />
+        </div>
+        <div class="row">
+            <label class="text-black col-md-5">Blood Group : </label>
+            <input class="form-control col-md-7"  data-bind="value: donoR.BloodGroup " />
+        </div>
+    </div>
+
+
+    <div class="card-footer btn-group-vertical">
+        <button data-bind="click: saveDonor" class="btn btn-success">Put Forward</button>
+        <button data-bind="click: extractList" class="btn btn-info">Cancel</button>
+    </div>
+
+</div>
+
+
+
+
+
+
+<script>
+
+    var donorFile = ko.observableArray([]);
+
+    var donoR = ko.observable({
+        donoR: 0,
+        firstname: "",
+        lastname: "",
+        bloodgroup: ""
+    })
+
+
+    var situation = ko.observable('index');
+
+
+    var donoR = {
+        DonorId: ko.observable(0),
+        FirstName: ko.observable(''),
+        LastName: ko.observable(''),
+        BloodGroup: ko.observable('')
+    };
+
+
+    addNew = function () {
+        situation('form');
+
+        donoR.DonorId(0);
+        donoR.FirstName('');
+        donoR.LastName('');
+        donoR.BloodGroup('');
+    }
+
+
+    extractDonor = function (c) {
+
+        $.ajax("/api/donor/" + c.DonorId, {
+            type: "get",
+            success: function(info) {
+            donoR.DonorId(info.DonorId);
+            donoR.FirstName(info.FirstName);
+            donoR.LastName(info.LastName);
+            donoR.BloodGroup(info.BloodGroup);
+
+            situation('form');
+
+        },
+            error: function (error) {
+                alert(JSON.stringify(error));
+            }
+        });
+    }
+
+
+
+    vanishDonor = function (c) {
+        $.ajax("/api/donor/" + c.DonorId, {
+
+            type: "delete",
+            success: function () {
+
+                alert('data deleted');
+
+                extractList();
+            },
+
+            error: function (error) {
+                alert(JSON.stringify(error));
+            }
+
+        });
+    };
+
+    saveDonor = function () {
+
+        $.ajax("/api/donor/", {
+            type: donoR.DonorId() == 0 ? "post" : "put",
+            data: {
+                "DonorId": donoR.DonorId(),
+                "FirstName": donoR.FirstName(),
+                "LastName": donoR.LastName(),
+                "BloodGroup": donoR.BloodGroup()
+            },
+            
+            success: function () {
+
+                alert('data saved');
+
+                extractList();
+
+            },
+            error: function (error) {
+                alert(JSON.stringify(error));
+            }
+        });
+
+
+    }
+
+
+
+    extractList = function () {
+        $.ajax("/api/donor", {
+            type: "get",
+            success: function (info) {
+                donorFile.removeAll();
+
+                for (var i = 0; i < info.length; i++) {
+                    donorFile.push(info[i]);
+                }
+                situation('index');
+            },
+
+            error: function (error) {
+                alert(JSON.stringify(error));
+            }
+        });
+    }
+
+    extractList();
+
+    ko.applyBindings();
+
+
+</script>
